@@ -1,0 +1,18 @@
+# 1. Metadata File (metadata.txt)
+Create a metadata.txt file with sample IDs and their corresponding condition (e.g., healthy control vs. disease). Structure it as follows:
+
+SampleID    Condition
+Sample1     Control
+Sample2     Control
+Sample3     Disease
+Sample4     Disease
+
+
+
+
+# 2. Count Matrix File (counts.txt)
+Your counts.txt file should contain raw count data with genes as rows and sample IDs as columns. Structure it as follows:
+
+GeneID    Sample1    Sample2    Sample3    Sample4
+GeneA     100        150        120        130
+GeneB     200        250        210        220
