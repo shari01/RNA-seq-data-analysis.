@@ -1,5 +1,22 @@
 
 <h1>RNA Sequencing Analysis of HPV-Positive Head and Neck Cancers</h1>
+## Analysis Plots
+
+### 1. Plot Counts for Specific Genes
+![Plot Counts for Specific Genes](PLOT_COUNTS_FOR_SPECIFIC_GENES.png)
+This plot shows the read counts for selected genes across different samples, allowing comparison of expression levels. It’s helpful for visualizing individual gene behavior and assessing variability among samples.
+
+### 2. Volcano Plot
+![Volcano Plot](VOLCANO_PLOT.png)
+A volcano plot displays the log fold change versus statistical significance for all genes. Points further up and to the sides indicate genes with high significance and large expression changes, helping identify potential biomarkers or differentially expressed genes.
+
+### 3. MA Plot
+![MA Plot](maplot.png)
+The MA plot visualizes the average expression versus the log fold change for each gene. Genes with significant differential expression appear as points away from the center. This plot is commonly used to assess the distribution and scale of changes across the dataset.
+
+### 4. Dispersion Estimate Plot
+![Dispersion Estimate Plot](Dispersion_estimate.png)
+This plot shows the dispersion estimates across genes, which are crucial for RNA-seq differential expression analysis. The plot helps evaluate the model's accuracy in fitting the data and ensures appropriate dispersion estimates for statistical tests.
 
 <h2>Dataset Overview</h2>
 <p><strong>Status:</strong> Public (Available since May 13, 2016)<br>
