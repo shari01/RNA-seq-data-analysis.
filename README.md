@@ -1,6 +1,6 @@
 
 <h1>RNA Sequencing Analysis of HPV-Positive Head and Neck Cancers</h1>
-### Analysis Plots
+<h2>Analysis Plots</h2> 
 
 ### 1. Plot Counts for Specific Genes
 ![Plot Counts for Specific Genes](PLOT_COUNTS_FOR_SPECIFIC_GENES.png)
