@@ -1,4 +1,5 @@
 ```{r}
+
 library(dplyr)
 library(DESeq2)
 library(readr)
@@ -6,258 +7,252 @@ library(dplyr)
 library(ggplot2)
 ```
 
+
 ```{r}
-# Reading in the data with specified column types --------------------------------------------
-# Specify column types for gene counts
-mycounts <- read_csv("C:/Users/Sheryar Malik/Downloads/RNa-seq analysis/Anotherdataset/gene_counts_cleaned.csv", 
-                     col_types = cols(
-  gene = col_character(),
-  UM_N01 = col_double(),
-  UM_P01 = col_double(),
-  UM_P02 = col_double(),
-  UM_N02 = col_double(),
-  UM_P03 = col_double(),
-  UM_P04 = col_double(),
-  UM_P05 = col_double(),
-  UM_P06 = col_double(),
-  UM_N03 = col_double(),
-  UM_N04 = col_double(),
-  UM_N05 = col_double(),
-  UM_N06 = col_double(),
-  UM_P07 = col_double(),
-  UM_N07 = col_double(),
-  UM_N08 = col_double(),
-  UM_P08 = col_double(),
-  UM_N09 = col_double(),
-  UM_N10 = col_double(),
-  UM_P09 = col_double(),
-  UM_P10 = col_double(),
-  UM_P11 = col_double(),
-  UM_N11 = col_double(),
-  UM_P12 = col_double(),
-  UM_N12 = col_double(),
-  UM_N13 = col_double(),
-  UM_P13 = col_double(),
-  UM_N14 = col_double(),
-  UM_P14 = col_double(),
-  UM_P15 = col_double(),
-  UM_P16 = col_double(),
-  UM_P17 = col_double(),
-  UM_N15 = col_double(),
-  UM_N16 = col_double(),
-  UM_N17 = col_double(),
-  UM_N18 = col_double(),
-  UM_P18 = col_double()
-))
+#if (!requireNamespace("BiocManager", quietly = TRUE))
+   # install.packages("BiocManager")
 
-# Specify column types for metadata
-metadata <- read_csv("C:/Users/Sheryar Malik/Downloads/RNa-seq analysis/Anotherdataset/metadata.csv", 
-                     col_types = cols(
-                       sample_id = col_character(),
-                       group = col_character()
-                     ))
-
-# Convert the data to a dataframe 
-mycounts <- as.data.frame(mycounts)
-metadata <- as.data.frame(metadata)
-
-# Display the first few rows of gene counts to verify
-head(mycounts, 32)
 ```
+
+
 ```{r}
-# Convert the data to a dataframe 
+#BiocManager::install("DESeq2")
+
+```
+
+
+```{r}
+#Reading in the data 
+#metadata contains "Dex" whics how the algorithm detects the controls and the treatment cases 
+mycounts <- read_csv("C:/Users/Sheryar Malik/Downloads/test/rawcounts.csv")  
+metadata <-  read_csv("C:/Users/Sheryar Malik/Downloads/test/metadata.csv")
+```
+
+
+
+```{r}
+#converting the data to a dataframe 
 mycounts <- as.data.frame(mycounts)
 metadata <- as.data.frame(metadata)
 ```
 
+
 ```{r}
-# Display the first few rows of gene counts to verify
+#making sure the data is in the right format 
 head(mycounts, 32)
-```
 
-```{r}
-# remove duplicate data if any
-library(readr)
-
-data <- read_csv("C:/Users/Sheryar Malik/Downloads/RNa-seq analysis/Anotherdataset/gene_counts.csv")  # Load your data
-
-duplicates <- data[duplicated(data$gene), ]  # Replace 'your_row_name_column' with the actual column name you think might have duplicates
-print(duplicates)
-
-```
-
-```{r}
-library(readr)
-library(dplyr)
-
-# Load your data
-data <- read_csv("C:/Users/Sheryar Malik/Downloads/RNa-seq analysis/Anotherdataset/gene_counts.csv")
-
-# Remove the rows with 'gene' equal to '1-Mar' or '2-Mar'
-data_cleaned <- data %>%
-  filter(!(gene %in% c("1-Mar", "2-Mar")))
-
-# Save the cleaned data to a new CSV file
-write_csv(data_cleaned, "C:/Users/Sheryar Malik/Downloads/RNa-seq analysis/Anotherdataset/gene_counts_cleaned.csv")
-
-# Print a message to confirm that the data has been saved
-cat("Cleaned data saved to gene_counts_cleaned.csv\n")
-
-
+#DESEQ2 algorithm -- you can use edgeR/limma if you'd like 
+dds <- DESeq2::DESeqDataSetFromMatrix(countData=(mycounts), 
+                                      colData=metadata, 
+                                      design=~condition,
+                                      tidy=TRUE)
 ```
 
 
 ```{r}
-# Prepare DESeq2 dataset -- replace 'Type' with your actual column name for conditions
-dds <- DESeqDataSetFromMatrix(countData = mycounts, 
-                              colData = metadata, 
-                              design = ~ group,
-                              tidy = TRUE)
-```
-
-
-
-```{r}
-# Assuming `dds` is your DESeqDataSet object
+# NORMALIZE 
 dds <- estimateSizeFactors(dds)
-
-# Get normalized counts
-normlzd_dds <- counts(dds, normalized = TRUE)
-
-# Boxplot of normalized data
-boxplot(normlzd_dds, main = "Expression after normalization")
-
-# Save normalized counts to a new CSV file
-write.csv(normlzd_dds, "C:/Users/Sheryar Malik/Downloads/RNa-seq analysis/Anotherdataset/normalized_counts.csv")
-
-# Print a message to confirm that the normalized data has been saved
-cat("Normalized counts saved to normalized_counts.csv\n")
-```
-
-```{r}
-# DESeq2 Analysis ------------------------------------------------
-dds <- DESeq(dds)
-resultsNames(dds)  # Check contrast names
-```
-
-
-
-```{r}
-# Set comparison groups - replace "HC" and "Tumor" with control and case labels #in my case i am using normal and disease tag in heaty control sectoin
-#only change conditon = group and all relvnt data
-res <- results(dds, contrast = c("group", "hc", "disease"), tidy = TRUE)
-res <- res[order(res$padj), ]  # Order by adjusted p-value
-res <- res %>% mutate(sig = padj < 0.05)
+sizeFactors(dds)
 ```
 
 
 ```{r}
-# DATA EXPLORATION ----------------------------------------------
-# PCA Plot
-vsdata <- vst(dds, blind = FALSE)
-pca_data <- plotPCA(vsdata, intgroup = c("group"), returnData = TRUE)
-plotPCA(vsdata, intgroup = c("group"))
-ggplot(pca_data, aes(x = PC1, y = PC2, color = group, label = name)) +
+#sizeFactors<-sizeFactors(dds)
+
+#boxplot(sizeFactors, main = "Size Factors", ylab = "Size Factor")
+normlzd_dds <- counts(dds, normalized=T)
+boxplot(normlzd_dds, main = "Expression affter normalization")
+head(normlzd_dds)
+normalized_counts <- as.data.frame(normlzd_dds)
+```
+
+
+```{r}
+
+#library(writexl)
+
+#write_xlsx(normalized_counts, "D:/LSILData normalized.xlxs")
+
+  write.csv(normalized_counts, "D:/Atypia/normalized.csv", row.names = FALSE)
+
+```
+
+
+```{r}
+#normalized_counts
+
+
+#FIND DISPERSION ESTIMATES AND FIT THE MODEL 
+
+dds <- DESeq2::DESeq(dds)
+resultsNames(dds)
+```
+
+
+```{r}
+# ASSIGNING COMPARE GROUP i.e treatment 
+
+res <- results(dds, contrast=c("condition","Atypia","Normal"), tidy = TRUE)
+ix = which.min(res$padj)
+res <- res[order(res$padj),]
+res <- res %>% mutate(sig=padj<0.05)
+
+#res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
+# arrange(padj)
+#head(res_tbl)
+```
+
+
+```{r}
+# DATA EXPLORATION
+
+#PCA with PC1 and PC2
+res %>% 
+  group_by(sig) %>% 
+  summarize(n=n())
+vsdata <- vst(dds, blind=FALSE)
+pca_data <- plotPCA(vsdata, intgroup=c("condition"), returnData = TRUE)
+pca_data
+plot(hclust(dist(t(normlzd_dds))), cex = 0.5, labels=colData(dds)$protocol)
+summary(res)
+plotPCA(vsdata, intgroup=c("condition"))
+ggplot(pca_data, aes(x = PC1, y = PC2, color = condition, label = name)) +
   geom_point() +
   geom_text()
-```
 
-
-```{r}
-# Dispersion and MA plot
-plotDispEsts(dds, main = "Dispersion Estimates")
+sizeFactors(dds)
+DESeq2::plotDispEsts(dds, main="Dispersion Estimates")
 plotMA(dds)
 ```
 ```{r}
-# VOLCANO PLOT ---------------------------------------------------
+# Data exploration and PCA
+vsdata <- vst(dds, blind=FALSE)
+pca_data <- plotPCA(vsdata, intgroup=c("condition"), returnData = TRUE)
+pca_data  # Display PCA data
+
+# Save PCA data to CSV
+write_csv(pca_data, "D:/Atypia/pca.csv")
+```
+
+
+```{r}
+# Load necessary libraries
+library(DESeq2)
+library(readr)
+
+# Prepare the data using variance stabilizing transformation (VST)
+vsdata <- vst(dds, blind=FALSE)
+
+# Perform PCA analysis on the variance stabilized data
+pca_result <- prcomp(assay(vsdata))
+
+# Extracting and storing the first 10 principal components
+pca_top10 <- data.frame(pca_result$x[, 1:10])
+
+# Saving the top 10 PC values to CSV
+write_csv(pca_top10, "D:/Atypia/PCA_top10.csv")
+
+# Optionally, you can display the PCA data to ensure everything looks correct
+print(pca_top10)
+
+```
+
+
+```{r}
+# VOLCANO PLOT 
 res %>%
   filter(!is.na(padj)) %>%
-  ggplot(aes(x = log2FoldChange, y = -log10(padj), color = padj < 0.05 & abs(log2FoldChange) > 1)) +
+  ggplot(aes(x = log2FoldChange, y = -log10(padj),
+             color = padj < 0.05 & abs(log2FoldChange) > 1)) +
   scale_colour_manual(values = c("gray", "red")) +
   geom_point(size = 0.5) +
   geom_hline(yintercept = -log10(0.05)) +
   geom_vline(xintercept = 1) +
   geom_vline(xintercept = -1)
 ```
+```{r}
+# Volcano Plot Enhancement
+library(ggplot2)
+library(ggrepel)  # For better label positioning
 
-```{r}
-# PLOT COUNTS FOR SPECIFIC GENES ---------------------------------
-# Plot individual gene expression (replace with your genes of interest)
-plotCounts(dds, gene = "TGFBI", intgroup = "group")
-TGFBI <- plotCounts(dds, gene = "TGFBI", intgroup = "group", returnData = TRUE)
-gn.most.diff.val <- counts(dds, normalized = TRUE)["TGFBI",]
-barplot(gn.most.diff.val, col = "black", main = "TGFBI", las = 2, cex.names = 0.5, cex.lab = 2)
-```
-```{r}
-# Export DEGs ---------------------------------------------------
-# Export significant DEGs with adjusted p-value < 0.05
 res %>%
-  filter(padj < 0.05) %>%
-  write_csv("C:/Users/Sheryar Malik/Downloads/RNa-seq analysis/Anotherdataset/DEGs.csv")
+  filter(!is.na(padj)) %>%
+  ggplot(aes(x = log2FoldChange, y = -log10(padj),
+             color = padj < 0.05 & abs(log2FoldChange) > 1)) +
+  geom_point(alpha=0.75, size = 1.5) +  # Adjust point size and transparency
+  scale_color_manual(values = c("grey80", "deepskyblue3")) +  # Change colors
+  geom_hline(yintercept = -log10(0.05), linetype="dashed", color = "red") +
+  geom_vline(xintercept = c(-1, 1), linetype="dashed", color = "red") +
+  labs(title = "Volcano Plot of Differential Expression",
+       x = "Log2 Fold Change",
+       y = "-Log10 Adjusted P-value") +
+  theme_minimal() +  # Cleaner theme
+  theme(legend.position = "none",  # Remove legend
+        plot.title = element_text(hjust = 0.5)) +  # Center title
+  geom_text_repel(  # Add labels to significant points
+    data = subset(res, padj < 0.05 & abs(log2FoldChange) > 1),
+    aes(label = row),
+    size = 3,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.5, "lines")
+  )
 
-res
-dim(res)
 ```
 
 
+```{r}
+# PLOT COUNTS FOR SPECIFIC GENES  
+
+#A good way to visual biomarkers 
+
+plotCounts(dds, gene="FUS", intgroup="condition")
+ATF3 <- plotCounts(dds, gene="TG", intgroup="condition", returnData=TRUE)
+gn.most.sign <- rownames(dds)[1]
+gn.most.diff.val <- counts(dds, normalized=T)["FUS",]
+barplot(gn.most.diff.val, col= "Black", main="FUS", las=2, cex.names=0.5, cex.lab = 2)
+```
 
 
+```{r}
+# check expression of a set of biomarkers 
+library(ggplot2)
+LSIL <- c("FUS", "TARDBP", "SOD1")
+
+#FUS, TARDBP, SOD1, C9Orf72 and VCP
+```
 
 
+```{r}
+# Filter the results for the genes of interest
+gene_results <- subset(res, row %in% LSIL)
+```
 
 
+```{r}
+# Create a barplot of the log fold change values
+ggplot(gene_results, aes(x = row, y = log2FoldChange)) +
+  geom_bar(stat = "identity", fill = "black") +
+  ggtitle("LFC for Differentially Expressed Biomarkers: ALS") +
+  ylab("Log2 Fold Change") + xlab("Gene")
+theme(axis.text.x = element_text(angle = 90, vjust = 0.10, hjust = 1))
+```
 
 
+```{r}
+#Export DEG Significant genes for analysis 
+res<- res %>% 
+  filter(padj<0.05) %>% 
+  write_csv("D:/Atypia/DEGs_File.csv")
+res
+```
 
 
+```{r}
+dim(res)
 
+```
 
+```{r}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
 
