@@ -24,8 +24,8 @@ library(ggplot2)
 ```{r}
 #Reading in the data 
 #metadata contains "Dex" whics how the algorithm detects the controls and the treatment cases 
-mycounts <- read_csv("C:/Users/Sheryar Malik/Downloads/test/rawcounts.csv")  
-metadata <-  read_csv("C:/Users/Sheryar Malik/Downloads/test/metadata.csv")
+mycounts <- read_csv("enter your datafile location rawcounts.csv")  
+metadata <-  read_csv("enter your datafile location metadata.csv")
 ```
 
 
@@ -48,13 +48,11 @@ dds <- DESeq2::DESeqDataSetFromMatrix(countData=(mycounts),
                                       tidy=TRUE)
 ```
 
-
 ```{r}
 # NORMALIZE 
 dds <- estimateSizeFactors(dds)
 sizeFactors(dds)
 ```
-
 
 ```{r}
 #sizeFactors<-sizeFactors(dds)
@@ -66,17 +64,15 @@ head(normlzd_dds)
 normalized_counts <- as.data.frame(normlzd_dds)
 ```
 
-
 ```{r}
 
 #library(writexl)
 
-#write_xlsx(normalized_counts, "D:/LSILData normalized.xlxs")
+#write_xlsx(normalized_counts, "enter the output location normalized.xlxs")
 
-  write.csv(normalized_counts, "D:/Atypia/normalized.csv", row.names = FALSE)
+  write.csv(normalized_counts, "enter the output location ormalized.csv", row.names = FALSE)
 
 ```
-
 
 ```{r}
 #normalized_counts
@@ -88,11 +84,10 @@ dds <- DESeq2::DESeq(dds)
 resultsNames(dds)
 ```
 
-
 ```{r}
 # ASSIGNING COMPARE GROUP i.e treatment 
 
-res <- results(dds, contrast=c("condition","Atypia","Normal"), tidy = TRUE)
+res <- results(dds, contrast=c("condition","hc","Disease"), tidy = TRUE)
 ix = which.min(res$padj)
 res <- res[order(res$padj),]
 res <- res %>% mutate(sig=padj<0.05)
@@ -101,7 +96,6 @@ res <- res %>% mutate(sig=padj<0.05)
 # arrange(padj)
 #head(res_tbl)
 ```
-
 
 ```{r}
 # DATA EXPLORATION
@@ -124,6 +118,7 @@ sizeFactors(dds)
 DESeq2::plotDispEsts(dds, main="Dispersion Estimates")
 plotMA(dds)
 ```
+
 ```{r}
 # Data exploration and PCA
 vsdata <- vst(dds, blind=FALSE)
@@ -131,14 +126,12 @@ pca_data <- plotPCA(vsdata, intgroup=c("condition"), returnData = TRUE)
 pca_data  # Display PCA data
 
 # Save PCA data to CSV
-write_csv(pca_data, "D:/Atypia/pca.csv")
+write_csv(pca_data, "enter the output location of pca file" pca.csv")
 ```
 
 
 ```{r}
 # Load necessary libraries
-library(DESeq2)
-library(readr)
 
 # Prepare the data using variance stabilizing transformation (VST)
 vsdata <- vst(dds, blind=FALSE)
@@ -150,13 +143,12 @@ pca_result <- prcomp(assay(vsdata))
 pca_top10 <- data.frame(pca_result$x[, 1:10])
 
 # Saving the top 10 PC values to CSV
-write_csv(pca_top10, "D:/Atypia/PCA_top10.csv")
+write_csv(pca_top10, "enter the output location PCA_top10.csv")
 
 # Optionally, you can display the PCA data to ensure everything looks correct
 print(pca_top10)
 
 ```
-
 
 ```{r}
 # VOLCANO PLOT 
@@ -170,6 +162,7 @@ res %>%
   geom_vline(xintercept = 1) +
   geom_vline(xintercept = -1)
 ```
+
 ```{r}
 # Volcano Plot Enhancement
 library(ggplot2)
@@ -199,7 +192,6 @@ res %>%
 
 ```
 
-
 ```{r}
 # PLOT COUNTS FOR SPECIFIC GENES  
 
@@ -212,7 +204,6 @@ gn.most.diff.val <- counts(dds, normalized=T)["FUS",]
 barplot(gn.most.diff.val, col= "Black", main="FUS", las=2, cex.names=0.5, cex.lab = 2)
 ```
 
-
 ```{r}
 # check expression of a set of biomarkers 
 library(ggplot2)
@@ -220,7 +211,6 @@ LSIL <- c("FUS", "TARDBP", "SOD1")
 
 #FUS, TARDBP, SOD1, C9Orf72 and VCP
 ```
-
 
 ```{r}
 # Filter the results for the genes of interest
@@ -242,7 +232,7 @@ theme(axis.text.x = element_text(angle = 90, vjust = 0.10, hjust = 1))
 #Export DEG Significant genes for analysis 
 res<- res %>% 
   filter(padj<0.05) %>% 
-  write_csv("D:/Atypia/DEGs_File.csv")
+  write_csv("enter the output location DEGs_File.csv")
 res
 ```
 
@@ -253,6 +243,3 @@ dim(res)
 ```
 
 ```{r}
-
-```
-
