@@ -1,245 +1,85 @@
-```{r}
-
+# Load necessary libraries
 library(dplyr)
 library(DESeq2)
 library(readr)
-library(dplyr)
 library(ggplot2)
-```
+library(ggrepel)
 
+# Install Bioconductor and DESeq2 (uncomment if not installed)
+# if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+# BiocManager::install("DESeq2")
 
-```{r}
-#if (!requireNamespace("BiocManager", quietly = TRUE))
-   # install.packages("BiocManager")
-
-```
-
-
-```{r}
-#BiocManager::install("DESeq2")
-
-```
-
-
-```{r}
-#Reading in the data 
-#metadata contains "Dex" whics how the algorithm detects the controls and the treatment cases 
+# Read in the data
 mycounts <- read_csv("enter your datafile location rawcounts.csv")  
-metadata <-  read_csv("enter your datafile location metadata.csv")
-```
+metadata <- read_csv("enter your datafile location metadata.csv")
 
-
-
-```{r}
-#converting the data to a dataframe 
+# Convert the data to dataframes
 mycounts <- as.data.frame(mycounts)
 metadata <- as.data.frame(metadata)
-```
 
-
-```{r}
-#making sure the data is in the right format 
+# View the first few rows of the counts data
 head(mycounts, 32)
 
-#DESEQ2 algorithm -- you can use edgeR/limma if you'd like 
-dds <- DESeq2::DESeqDataSetFromMatrix(countData=(mycounts), 
-                                      colData=metadata, 
-                                      design=~condition,
-                                      tidy=TRUE)
-```
+# DESeq2 analysis: create DESeq dataset from matrix
+dds <- DESeq2::DESeqDataSetFromMatrix(
+  countData = mycounts, 
+  colData = metadata, 
+  design = ~condition, 
+  tidy = TRUE
+)
 
-```{r}
-# NORMALIZE 
+# Normalize the dataset
 dds <- estimateSizeFactors(dds)
 sizeFactors(dds)
-```
-
-```{r}
-#sizeFactors<-sizeFactors(dds)
-
-#boxplot(sizeFactors, main = "Size Factors", ylab = "Size Factor")
-normlzd_dds <- counts(dds, normalized=T)
-boxplot(normlzd_dds, main = "Expression affter normalization")
+normlzd_dds <- counts(dds, normalized = TRUE)
+boxplot(normlzd_dds, main = "Expression After Normalization")
 head(normlzd_dds)
 normalized_counts <- as.data.frame(normlzd_dds)
-```
 
-```{r}
+# Export normalized counts to CSV
+write.csv(normalized_counts, "enter the output location normalized.csv", row.names = FALSE)
 
-#library(writexl)
-
-#write_xlsx(normalized_counts, "enter the output location normalized.xlxs")
-
-  write.csv(normalized_counts, "enter the output location ormalized.csv", row.names = FALSE)
-
-```
-
-```{r}
-#normalized_counts
-
-
-#FIND DISPERSION ESTIMATES AND FIT THE MODEL 
-
+# Perform DESeq to fit the model
 dds <- DESeq2::DESeq(dds)
 resultsNames(dds)
-```
 
-```{r}
-# ASSIGNING COMPARE GROUP i.e treatment 
+# Assign comparison groups (control vs treatment)
+res <- results(dds, contrast = c("condition", "hc", "disease"), tidy = TRUE)
+res <- res[order(res$padj),]  # Order by adjusted p-value
+res <- res %>% mutate(sig = padj < 0.05)  # Mark significant genes
 
-res <- results(dds, contrast=c("condition","hc","Disease"), tidy = TRUE)
-ix = which.min(res$padj)
-res <- res[order(res$padj),]
-res <- res %>% mutate(sig=padj<0.05)
-
-#res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
-# arrange(padj)
-#head(res_tbl)
-```
-
-```{r}
-# DATA EXPLORATION
-
-#PCA with PC1 and PC2
-res %>% 
-  group_by(sig) %>% 
-  summarize(n=n())
-vsdata <- vst(dds, blind=FALSE)
-pca_data <- plotPCA(vsdata, intgroup=c("condition"), returnData = TRUE)
-pca_data
-plot(hclust(dist(t(normlzd_dds))), cex = 0.5, labels=colData(dds)$protocol)
+# Data exploration: PCA
+vsdata <- vst(dds, blind = FALSE)
+pca_data <- plotPCA(vsdata, intgroup = c("condition"), returnData = TRUE)
+plot(hclust(dist(t(normlzd_dds))), cex = 0.5, labels = colData(dds)$protocol)
 summary(res)
-plotPCA(vsdata, intgroup=c("condition"))
-ggplot(pca_data, aes(x = PC1, y = PC2, color = condition, label = name)) +
-  geom_point() +
-  geom_text()
+plotPCA(vsdata, intgroup = c("condition"))
 
-sizeFactors(dds)
-DESeq2::plotDispEsts(dds, main="Dispersion Estimates")
-plotMA(dds)
-```
-
-```{r}
-# Data exploration and PCA
-vsdata <- vst(dds, blind=FALSE)
-pca_data <- plotPCA(vsdata, intgroup=c("condition"), returnData = TRUE)
-pca_data  # Display PCA data
-
-# Save PCA data to CSV
-write_csv(pca_data, "enter the output location of pca file" pca.csv")
-```
-
-
-```{r}
-# Load necessary libraries
-
-# Prepare the data using variance stabilizing transformation (VST)
-vsdata <- vst(dds, blind=FALSE)
-
-# Perform PCA analysis on the variance stabilized data
-pca_result <- prcomp(assay(vsdata))
-
-# Extracting and storing the first 10 principal components
-pca_top10 <- data.frame(pca_result$x[, 1:10])
-
-# Saving the top 10 PC values to CSV
-write_csv(pca_top10, "enter the output location PCA_top10.csv")
-
-# Optionally, you can display the PCA data to ensure everything looks correct
-print(pca_top10)
-
-```
-
-```{r}
-# VOLCANO PLOT 
+# Volcano Plot for DEGs
 res %>%
   filter(!is.na(padj)) %>%
-  ggplot(aes(x = log2FoldChange, y = -log10(padj),
-             color = padj < 0.05 & abs(log2FoldChange) > 1)) +
+  ggplot(aes(x = log2FoldChange, y = -log10(padj), color = padj < 0.05 & abs(log2FoldChange) > 1)) +
   scale_colour_manual(values = c("gray", "red")) +
   geom_point(size = 0.5) +
   geom_hline(yintercept = -log10(0.05)) +
-  geom_vline(xintercept = 1) +
-  geom_vline(xintercept = -1)
-```
+  geom_vline(xintercept = c(-1, 1))
 
-```{r}
-# Volcano Plot Enhancement
-library(ggplot2)
-library(ggrepel)  # For better label positioning
-
+# Enhanced Volcano Plot with ggplot2 and ggrepel
 res %>%
   filter(!is.na(padj)) %>%
-  ggplot(aes(x = log2FoldChange, y = -log10(padj),
-             color = padj < 0.05 & abs(log2FoldChange) > 1)) +
-  geom_point(alpha=0.75, size = 1.5) +  # Adjust point size and transparency
+  ggplot(aes(x = log2FoldChange, y = -log10(padj), color = padj < 0.05 & abs(log2FoldChange) > 1)) +
+  geom_point(alpha = 0.75, size = 1.5) +  # Adjust point size and transparency
   scale_color_manual(values = c("grey80", "deepskyblue3")) +  # Change colors
-  geom_hline(yintercept = -log10(0.05), linetype="dashed", color = "red") +
-  geom_vline(xintercept = c(-1, 1), linetype="dashed", color = "red") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "red") +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed", color = "red") +
   labs(title = "Volcano Plot of Differential Expression",
        x = "Log2 Fold Change",
        y = "-Log10 Adjusted P-value") +
-  theme_minimal() +  # Cleaner theme
-  theme(legend.position = "none",  # Remove legend
-        plot.title = element_text(hjust = 0.5)) +  # Center title
-  geom_text_repel(  # Add labels to significant points
-    data = subset(res, padj < 0.05 & abs(log2FoldChange) > 1),
-    aes(label = row),
-    size = 3,
-    box.padding = unit(0.35, "lines"),
-    point.padding = unit(0.5, "lines")
-  )
+  theme_minimal() +
+  theme(legend.position = "none", plot.title = element_text(hjust = 0.5)) +
+  geom_text_repel(data = subset(res, padj < 0.05 & abs(log2FoldChange) > 1), aes(label = row))
 
-```
-
-```{r}
-# PLOT COUNTS FOR SPECIFIC GENES  
-
-#A good way to visual biomarkers 
-
-plotCounts(dds, gene="FUS", intgroup="condition")
-ATF3 <- plotCounts(dds, gene="TG", intgroup="condition", returnData=TRUE)
-gn.most.sign <- rownames(dds)[1]
-gn.most.diff.val <- counts(dds, normalized=T)["FUS",]
-barplot(gn.most.diff.val, col= "Black", main="FUS", las=2, cex.names=0.5, cex.lab = 2)
-```
-
-```{r}
-# check expression of a set of biomarkers 
-library(ggplot2)
-LSIL <- c("FUS", "TARDBP", "SOD1")
-
-#FUS, TARDBP, SOD1, C9Orf72 and VCP
-```
-
-```{r}
-# Filter the results for the genes of interest
-gene_results <- subset(res, row %in% LSIL)
-```
-
-
-```{r}
-# Create a barplot of the log fold change values
-ggplot(gene_results, aes(x = row, y = log2FoldChange)) +
-  geom_bar(stat = "identity", fill = "black") +
-  ggtitle("LFC for Differentially Expressed Biomarkers: ALS") +
-  ylab("Log2 Fold Change") + xlab("Gene")
-theme(axis.text.x = element_text(angle = 90, vjust = 0.10, hjust = 1))
-```
-
-
-```{r}
-#Export DEG Significant genes for analysis 
-res<- res %>% 
-  filter(padj<0.05) %>% 
+# Export significant DEGs to CSV
+res %>%
+  filter(padj < 0.05) %>%
   write_csv("enter the output location DEGs_File.csv")
-res
-```
-
-
-```{r}
-dim(res)
-
-```
-
-```{r}
