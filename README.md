@@ -1,5 +1,5 @@
-
 <h1>RNA Sequencing Analysis of HPV-Positive Head and Neck Cancers</h1>
+<h3>This repository provides a complete RNA-Seq data analysis pipeline using the DESeq2 package. It includes steps for data preprocessing, normalization, differential gene expression (DEG) analysis, PCA, volcano plots, and visualizing gene expression changes. The workflow is designed to help researchers efficiently analyze RNA-Seq data, identify key genes, and generate informative plots to support biological insights.</h3>
 <h2>Analysis Plots</h2> 
 
 ### 1. Plot Counts for Specific Genes
